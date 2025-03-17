@@ -69,7 +69,7 @@ async def get_message_id(client, message):
     elif message.forward_sender_name:
         return 0
     elif message.text:
-        pattern = "https://telegram.dog/(?:c/)?(.*)/(\d+)"
+        pattern = r"https://telegram.dog/(?:c/)?(.*)/(\d+)"  # Fixed by adding 'r' prefix
         matches = re.match(pattern,message.text)
         if not matches:
             return 0
