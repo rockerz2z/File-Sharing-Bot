@@ -1,7 +1,15 @@
 #(©)Codexbotz
 
-from aiohttp import web
-from plugins import web_server
+# --- REMOVED aiohttp and web_server imports ---
+# from aiohttp import web
+# from plugins import web_server
+
+# --- ADDED Flask and threading imports ---
+import os
+import time
+import requests
+from threading import Thread
+from flask import Flask
 
 import pyromod.listen
 from pyrogram import Client
@@ -10,6 +18,36 @@ import sys
 from datetime import datetime
 
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT
+
+# --- ADDED: Flask app setup and keep-alive functions ---
+app = Flask('')
+
+@app.route('/')
+def root():
+    # This endpoint provides the health check response for your service
+    return "Bot is alive!"
+
+def run_flask():
+    """Runs the Flask web server."""
+    # The PORT is taken from your config file
+    app.run(host='0.0.0.0', port=PORT)
+
+def keep_alive():
+    """Pings the web server to keep the service alive."""
+    # !!! IMPORTANT: Replace this with your own app's public URL !!!
+    url = 'https://public-dina-ztamilweb-5573d113.koyeb.app'
+    while True:
+        try:
+            res = requests.get(url, timeout=15)
+            if res.status_code == 200:
+                print(f"Keep-alive ping successful.")
+            else:
+                print(f"Keep-alive ping failed with status code: {res.status_code}")
+        except Exception as e:
+            print(f"An error occurred during keep-alive ping: {e}")
+        # Wait for 5 minutes (300 seconds) before the next ping
+        time.sleep(300)
+# --- END of ADDED section ---
 
 
 name ="""
@@ -67,20 +105,22 @@ class Bot(Client):
 
         self.set_parse_mode(ParseMode.HTML)
         self.LOGGER(__name__).info(f"Bot Running..!\n\nCreated by \nhttps://t.me/CodeXBotz")
-        self.LOGGER(__name__).info(f""" \n\n       
+        self.LOGGER(__name__).info(f""" \n\n
 ░█████╗░░█████╗░██████╗░███████╗██╗░░██╗██████╗░░█████╗░████████╗███████╗
 ██╔══██╗██╔══██╗██╔══██╗██╔════╝╚██╗██╔╝██╔══██╗██╔══██╗╚══██╔══╝╚════██║
 ██║░░╚═╝██║░░██║██║░░██║█████╗░░░╚███╔╝░██████╦╝██║░░██║░░░██║░░░░░███╔═╝
 ██║░░██╗██║░░██║██║░░██║██╔══╝░░░██╔██╗░██╔══██╗██║░░██║░░░██║░░░██╔══╝░░
 ╚█████╔╝╚█████╔╝██████╔╝███████╗██╔╝╚██╗██████╦╝╚█████╔╝░░░██║░░░███████╗
 ░╚════╝░░╚════╝░╚═════╝░╚══════╝╚═╝░░╚═╝╚═════╝░░╚════╝░░░░╚═╝░░░╚══════╝
-                                          """)
+                                    """)
         self.username = usr_bot_me.username
-        #web-response
-        app = web.AppRunner(await web_server())
-        await app.setup()
-        bind_address = "0.0.0.0"
-        await web.TCPSite(app, bind_address, PORT).start()
+        
+        # --- MODIFIED: Replaced aiohttp with Flask thread setup ---
+        print("Starting Flask web server and keep-alive thread...")
+        Thread(target=keep_alive, daemon=True).start()
+        Thread(target=run_flask, daemon=True).start()
+        print("Web server and keep-alive thread initiated.")
+        # --- END of MODIFICATION ---
 
     async def stop(self, *args):
         await super().stop()
